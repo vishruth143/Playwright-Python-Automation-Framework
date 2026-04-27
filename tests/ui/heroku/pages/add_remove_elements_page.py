@@ -35,4 +35,3 @@ class AddRemoveElementsPage(BasePage):
 
     def click_first_delete_btn(self):
         self._locator(self._delete_btns).first.click(timeout=self.timeout)
-

@@ -19,4 +19,3 @@ class BasicAuthPage(BasePage):
     def is_authenticated(self):
         """Returns True if the success message 'Congratulations! ...' is visible."""
         return self.is_element_visible(self._success_msg_txt)
-

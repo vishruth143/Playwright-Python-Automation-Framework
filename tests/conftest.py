@@ -1,5 +1,5 @@
-# pylint: disable=[unused-argument, missing-module-docstring, unspecified-encoding]
-# pylint: disable=[missing-function-docstring, line-too-long, broad-exception-caught]
+# pylint: disable=[unused-argument, missing-module-docstring, unspecified-encoding, unused-variable]
+# pylint: disable=[missing-function-docstring, line-too-long, broad-exception-caught, deprecated-argument, logging-fstring-interpolation]
 
 import os
 import shutil

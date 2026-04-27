@@ -888,4 +888,3 @@ class TestHeroku:
             log.error(f"Error: {e}")
             log.info("Test #08 : Verify the Disappearing Elements page behaviour. - Failed")
             raise
-

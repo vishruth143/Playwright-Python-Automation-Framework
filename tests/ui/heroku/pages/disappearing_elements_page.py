@@ -49,4 +49,3 @@ class DisappearingElementsPage(BasePage):
     def get_nav_item_count(self):
         """Returns the current count of nav menu items."""
         return self._locator(self._nav_menu_items).count()
-

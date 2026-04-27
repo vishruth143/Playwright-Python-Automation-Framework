@@ -1,5 +1,5 @@
 # pylint: disable=[missing-function-docstring, missing-module-docstring, redefined-outer-name, unused-argument]
-# pylint: disable=[line-too-long, broad-exception-caught, logging-fstring-interpolation]
+# pylint: disable=[line-too-long, broad-exception-caught, logging-fstring-interpolation,protected-access]
 
 # =============================================================================
 # UI CONFTEST – Fixtures & Hooks for All Browser-Based (UI) Tests

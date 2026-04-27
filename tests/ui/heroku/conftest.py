@@ -30,4 +30,3 @@ from config.config_parser import ConfigParser
 @pytest.fixture(scope="session")
 def testdata():
     return ConfigParser.load_config("heroku_ui_test_data_config")
-

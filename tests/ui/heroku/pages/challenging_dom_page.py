@@ -75,4 +75,3 @@ class ChallengingDomPage(BasePage):
 
     def click_green_btn(self):
         self.click(self._green_btn)
-

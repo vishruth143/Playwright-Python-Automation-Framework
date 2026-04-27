@@ -31,4 +31,3 @@ class ABTestPage(BasePage):
         if self.is_element_visible(self._ab_test_variation_heading_txt):
             return self.get_text(self._ab_test_variation_heading_txt)
         return ""
-
