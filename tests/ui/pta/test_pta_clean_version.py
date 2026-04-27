@@ -21,7 +21,7 @@ class TestPTACleanVersion:
 
     Every test receives a fresh Playwright `page` fixture (one browser tab per
     test) provided by tests/ui/conftest.py.  Page objects accept a `page`
-    argument instead of Selenium's `driver`.
+    argument.
     """
 
     # @pytest.mark.skip

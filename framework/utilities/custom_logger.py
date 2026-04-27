@@ -66,18 +66,25 @@ _DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
 def _get_file_handler(worker_id: str) -> logging.handlers.RotatingFileHandler:
     """
-    Return (and cache) a RotatingFileHandler that writes to a worker-specific
-    log file: output/logs/test_execution_<worker_id>.log
+    Return (and cache) a RotatingFileHandler for the given worker.
 
-    Using one file per worker process eliminates all cross-process write
-    contention / garbled lines when running pytest -n <N>.
-    The files are merged in chronological order at session end by the
-    merge_worker_logs() helper called from tests/conftest.py.
+    - Single-process runs (worker_id == "main"):
+        Writes directly to output/logs/test_execution.log — no shard, no merge.
+
+    - pytest-xdist parallel runs (worker_id == "gw0", "gw1", …):
+        Each worker writes to its own shard (test_execution_gw0.log, …) to
+        avoid cross-process write contention / garbled lines.
+        The shards are merged into test_execution.log at session end by
+        merge_worker_logs() called from tests/conftest.py.
     """
     with _handler_lock:
         if worker_id not in _file_handlers:
             os.makedirs(LOG_PATH, exist_ok=True)
-            log_file = os.path.join(LOG_PATH, f"test_execution_{worker_id}.log")
+            # Non-xdist: write straight to the final file; no shard needed.
+            if worker_id == "main":
+                log_file = os.path.join(LOG_PATH, "test_execution.log")
+            else:
+                log_file = os.path.join(LOG_PATH, f"test_execution_{worker_id}.log")
             formatter = logging.Formatter(fmt=_FMT, datefmt=_DATE_FMT)
             handler = logging.handlers.RotatingFileHandler(
                 log_file,
@@ -94,52 +101,41 @@ def _get_file_handler(worker_id: str) -> logging.handlers.RotatingFileHandler:
 
 def merge_worker_logs() -> None:
     """
-    Merge all per-worker log files (test_execution_gw*.log / test_execution_main.log)
-    into a single test_execution.log, sorted by the timestamp on each line.
-    Called once at the end of the test session from tests/conftest.py.
+    Merge xdist per-worker shard files (test_execution_gw*.log) into the
+    single test_execution.log.  Called once at session end from conftest.py.
+
+    Non-xdist runs ("main" worker) write directly to test_execution.log, so
+    there are no shards to merge — this function becomes a no-op in that case.
     """
     import glob
 
-    pattern = os.path.join(LOG_PATH, "test_execution_*.log")
-    # Sort: "main" first, then gw0, gw1, gw2 … numerically
-    def _worker_sort_key(path: str) -> tuple:
-        name = os.path.splitext(os.path.basename(path))[0].replace("test_execution_", "")
-        if name == "main":
-            return (0, 0)
-        # "gw3" → (1, 3)
-        num = int(name[2:]) if name.startswith("gw") and name[2:].isdigit() else 999
-        return (1, num)
+    # Only pick up xdist shard files (gw0, gw1, …); never test_execution.log itself.
+    pattern = os.path.join(LOG_PATH, "test_execution_gw*.log")
 
-    worker_files = sorted(glob.glob(pattern), key=_worker_sort_key)
+    def _gw_sort_key(path: str) -> int:
+        name = os.path.splitext(os.path.basename(path))[0].replace("test_execution_gw", "")
+        return int(name) if name.isdigit() else 999
+
+    worker_files = sorted(glob.glob(pattern), key=_gw_sort_key)
     if not worker_files:
-        return
+        return  # Nothing to merge (non-xdist run or no workers produced logs)
 
-    # Write each worker's logs as a complete block, workers ordered by name
-    # (main first, then gw0, gw1, gw2, …).  Within each worker block the
-    # original file order (= chronological) is preserved.
-    all_lines: list[str] = []
-    for wf in worker_files:
-        try:
-            with open(wf, encoding="utf-8") as fh:
-                lines = fh.readlines()
-            if lines:
-                # Derive a display label from the filename, e.g. "gw0" / "main"
-                worker_label = os.path.splitext(os.path.basename(wf))[0]
-                # e.g. "test_execution_gw0" → "gw0"
-                worker_label = worker_label.replace("test_execution_", "")
-                separator = f"\n{'=' * 80}\n  Worker: {worker_label}\n{'=' * 80}\n"
-                all_lines.append(separator)
-                all_lines.extend(lines)
-        except Exception:
-            pass
-
-
+    # Append each worker's block to test_execution.log
     merged_path = os.path.join(LOG_PATH, "test_execution.log")
-    with open(merged_path, "w", encoding="utf-8") as out:
-        for line in all_lines:
-            out.write(line)
+    with open(merged_path, "a", encoding="utf-8") as out:
+        for wf in worker_files:
+            try:
+                with open(wf, encoding="utf-8") as fh:
+                    lines = fh.readlines()
+                if lines:
+                    worker_label = os.path.splitext(os.path.basename(wf))[0].replace("test_execution_", "")
+                    separator = f"\n{'=' * 80}\n  Worker: {worker_label}\n{'=' * 80}\n"
+                    out.write(separator)
+                    out.writelines(lines)
+            except Exception:
+                pass
 
-    # Remove the worker shards after successful merge
+    # Remove the xdist shards after successful merge
     for wf in worker_files:
         try:
             os.remove(wf)

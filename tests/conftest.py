@@ -8,7 +8,7 @@ import logging
 import json
 import platform
 
-from framework.utilities.custom_logger import merge_worker_logs
+from framework.utilities.custom_logger import merge_worker_logs, Logger, set_log_context, clear_log_context
 
 
 def _on_rm_error(func, path, exc_info):
@@ -38,6 +38,13 @@ def _release_log_handlers():
 
 def pytest_sessionstart(session):
     """Clean up and re-create the output directory at the start of every test run."""
+
+    # xdist worker processes also fire pytest_sessionstart, but all cleanup,
+    # allure setup, and log-header writing must only happen ONCE on the
+    # controller process.  Workers skip everything here.
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        return
+
     _release_log_handlers()
 
     output_dir = os.path.join(os.getcwd(), 'output')
@@ -75,6 +82,45 @@ def pytest_sessionstart(session):
     with open(executor_path, 'w') as f:
         json.dump(executor_data, f, indent=2)
     print(f"Generated executor.json: {executor_data.get('name')}")
+
+    # Write the session header banner to test_execution.log (controller only)
+    _log_session_header(executor_data)
+
+
+def _log_session_header(executor_data: dict) -> None:
+    """
+    Write a prominent session-start banner to test_execution.log.
+
+    Format written to the file:
+
+        ================================================================================
+          Worker: main
+        ================================================================================
+        <timestamp>  [main  ]  [session]  INFO  session:...:  ================...
+        <timestamp>  [main  ]  [session]  INFO  session:...:  Pytest session started ...
+        <timestamp>  [main  ]  [session]  INFO  session:...:  ================...
+    """
+    set_log_context(worker_id="main", test_name="session")
+    try:
+        # Write the worker separator block directly to the file BEFORE the Logger
+        # opens it, so it appears at the very top (matches the xdist worker format).
+        log_file = os.path.join(os.getcwd(), "output", "logs", "test_execution.log")
+        with open(log_file, "a", encoding="utf-8") as fh:
+            fh.write(f"\n{'=' * 80}\n  Worker: main\n{'=' * 80}\n")
+
+        session_log = Logger(file_id="session")
+        executor_name = executor_data.get("name", "Unknown")
+        region        = os.getenv("REGION", "QA").upper()
+        browser       = os.getenv("BROWSER", "CHROMIUM").upper()
+        headless      = os.getenv("HEADLESS", "N").upper()
+        session_log.info("=" * 80)
+        session_log.info(
+            f"Pytest session started - executor={executor_name}, "
+            f"region={region}, browser={browser}, headless={headless}"
+        )
+        session_log.info("=" * 80)
+    finally:
+        clear_log_context()
 
 
 def pytest_sessionfinish(session, exitstatus):
