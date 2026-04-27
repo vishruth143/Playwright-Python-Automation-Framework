@@ -1,2 +1,14 @@
-playwright        ==  1.58.0    # The Playwright library for browser automation.
-pytest-playwright ==  0.7.2     # Pytest plugin for Playwright, enabling easy integration of Playwright tests with pytest.
+allure-pytest            ==  2.15.3     # For Allure reporting
+colorlog                 ==  6.10.1     # For colored logging
+faker                    ==  40.15.0    # For generating fake data
+openpyxl                 ==  3.1.5      # For Excel file handling
+pandas                   ==  3.0.2      # For data manipulation and analysis
+playwright               ==  1.58.0     # The Playwright library for browser automation.
+pylint                   ==  4.0.5      # For code analysis
+pyyaml                   ==  6.0.3      # For YAML file handling
+pytest                   ==  9.0.3      # For testing framework
+pytest-html              ==  4.2.0      # For generating HTML reports
+pytest-playwright        ==  0.7.2      # Pytest plugin for Playwright, enabling easy integration of Playwright tests with pytest.
+pytest-rerunfailures     ==  16.1       # For rerunning failed tests
+pytest-xdist             ==  3.8.0      # For parallel test execution
+requests                 ==  2.33.1     # For making HTTP requests
