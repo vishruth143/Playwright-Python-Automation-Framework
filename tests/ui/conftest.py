@@ -12,6 +12,10 @@ import pytest
 from framework.utilities.screenshot_utils import get_screenshot_path
 from framework.utilities.custom_logger import Logger, set_log_context, clear_log_context
 
+# Lifecycle logger — shared across all test lifecycle hooks in this module.
+# file_id "test.lifecycle" mirrors the Selenium framework's log source label.
+_lifecycle_log = Logger(file_id="test.lifecycle")
+
 # Stash key used to pass test outcome from the hook → browser_context teardown
 _FAILED_KEY = pytest.StashKey[bool]()
 
@@ -141,10 +145,28 @@ def browser_context(browser, request):
 @pytest.fixture()
 def page(browser_context, request):
     """Yield a Page from our configured browser context."""
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "main")
+    # Strip the parametrise suffix for the test_name context (e.g. "[chromium]")
+    raw_name  = request.node.name
+    test_name = raw_name.split("[")[0]
+
+    # ── TEST START banner ──
+    set_log_context(worker_id=worker_id, test_name=test_name)
+    _lifecycle_log.info("-" * 80)
+    _lifecycle_log.info(f"TEST START: {test_name}")
+    _lifecycle_log.info("-" * 80)
+
     page = browser_context.new_page()
     request.node._page = page
     yield page
     page.close()
+
+    # ── TEST END banner ──
+    set_log_context(worker_id=worker_id, test_name=test_name)
+    _lifecycle_log.info("-" * 80)
+    _lifecycle_log.info(f"TEST END:   {test_name}")
+    _lifecycle_log.info("-" * 80)
+    clear_log_context()
 
 
 # =============================================================================
