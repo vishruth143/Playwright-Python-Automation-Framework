@@ -31,11 +31,16 @@ class LandingPage(BasePage):
         Returns a list of dicts for every <a> element on the landing page.
         Each dict contains:
           - text  : visible link text
-          - href  : absolute href attribute value
+          - href  : absolute href URL
+
+        NOTE: Playwright's get_attribute("href") returns the raw HTML attribute
+        value which may be a relative path (e.g. '/abtest').  We use evaluate()
+        to read the DOM *property* instead, which the browser always resolves to
+        a fully-qualified absolute URL (e.g. 'https://the-internet.herokuapp.com/abtest').
         """
         links = []
         for element in self.find_elements(self._all_example_lnks):
-            href = element.get_attribute("href") or ""
+            href = element.evaluate("el => el.href") or ""
             text = (element.inner_text() or "").strip()
             if href:
                 links.append({"text": text, "href": href})

@@ -1,29 +1,35 @@
 # 🧪 Playwright-Python-Automation-Framework
 
-A scalable and maintainable test automation framework built with Python, leveraging Playwright, Pytest.
-It supports both UI and API test automation, with environment-driven configuration for flexibility.
+A scalable and maintainable test automation framework built with Python, leveraging Playwright, Pytest, Pytest-BDD and Appium-Python-Client.
+It supports both UI, API and Mobile test automation, with environment-driven configuration for flexibility.
 The framework is fully integrated with Docker for containerized execution, GitHub Actions for CI/CD pipelines, and Microsoft Teams for real-time execution notifications.
 
+![img.png](automation_architecture.png)
 
+![img.png](automation_coverage.png)
 ---
 ## Features
 
 | # | Feature                                                        | Status        |
 |---|----------------------------------------------------------------|---------------|
-| 1 | 🎭 Playwright-Python-Pytest Test Automation framework          | ✅ Done |
+| 1 | 🎭 Playwright-Python-Pytest Test Automation framework          | ✅ Done        |
 | 2 | 🔧 Python programming support                                  | ✅ Done        |
-| 3 | 🌐 Cross-browser UI Automation testing (Chrome, Firefox, Edge) | ✅ In-Progress        |
-| 4 | 🧪 API testing support with Requests library                   | ✅ In-Progress        |
-| 5 | 📊 Test reports                                                | ✅ Done        |
-| 7 | 🔧 CI/CD integration with Jenkins and GitHub Actions           | ✅ In-Progress        |
-| 8 | 📥 Docker containerization                                     | ✅ In-Progress        |
+| 3 | 🌐 Cross-browser UI Automation testing (Chrome, Firefox, Edge) | ✅ Done        |
+| 4 | 🧪 API testing support with Requests library                   | ✅ In-Progress |
+| 5 | 📊 HTML and Allure test reports                                | ✅ Done        |
+| 6 | 🎯 Auto-wait, parallel execution and retry mechanisms          | ✅ Done        |
+| 7 | 🔧 CI/CD integration with Jenkins and GitHub Actions           | ✅ Done        |
+| 8 | 📥 Docker containerization                                     | ✅ Done        |
 | 9 | 📢 Microsoft Teams notifications                               | ✅ In-Progress        |
-| 10 | 🧩 BDD support with Pytest-BDD                                 | ✅ In-Progress        |
+| 10 | 🧩 BDD support with Pytest-BDD                                | ✅ In-Progress        |
+| 11 | 📂 Data-driven testing with JSON and Excel                    | ✅ Done        |
 | 12 | 🗂️ Page Object Model (POM) design pattern                     | ✅ Done        |
 | 13 | 🧑‍💻 Custom logging and screenshot capture on failures        | ✅ Done        |
-| 14 | ⚙️ Environment-driven configuration management                 | ✅ In-Progress        |
+| 14 | ⚙️ Environment-driven configuration management                 | ✅ Done        |
 | 15 | 🎥 Screen capture and video recording of failed UI tests       | ✅ Done        |
 | 16 | 📱 Mobile testing support with Appium                          | ✅ In-Progress        |
+| 17 | 🦗 Performance testing integration with Locust                 | ✅ In-Progress        |
+| 18 | 🗄️ Data testing with REST Countries API                       | ✅ In-Progress        |
 
 ---
 ## ⚡ Quick Setup

@@ -32,7 +32,7 @@ class TestHeroku:
     """
 
     # @pytest.mark.skip
-    def test_broken_links(self, page, request, region, testdata):
+    def test_broken_links(self, page, region):
         """
         Test #01 : Verify there are no broken links on the landing page.
 
@@ -86,7 +86,9 @@ class TestHeroku:
                         response = requests.get(href, allow_redirects=True, timeout=10)
 
                     status = response.status_code
-                    if 200 <= status < 300:
+                    # 401 is expected for auth-protected pages (Basic Auth, Digest Auth,
+                    # Secure File Download) — they are reachable but require credentials.
+                    if 200 <= status < 300 or status == 401:
                         log.info(f"  [PASS] [{status}] {text} -> {href}")
                         passed_count += 1
                     else:
