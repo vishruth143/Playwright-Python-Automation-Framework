@@ -48,19 +48,21 @@ class ChallengingDomPage(BasePage):
         """Returns the 'id' attribute of the green button (regenerated on each click)."""
         return self.get_attribute(self._green_btn, "id") or ""
 
-    def wait_for_table_to_regenerate(self, initial_first_cell_text: str, timeout: int = 10_000) -> bool:
+    def wait_for_table_to_regenerate(self, initial_blue_btn_id: str, timeout: int = 10_000) -> bool:
         """
-        Waits until the first cell of the first body row changes its text,
-        which confirms the table was re-rendered by a button click.
+        Waits until the blue button's 'id' attribute changes from the value
+        captured before the click, which confirms the DOM was fully regenerated.
 
-        In Playwright there are no stale element exceptions; instead we poll
-        until the cell text differs from the captured pre-click value.
+        The Challenging DOM page regenerates the entire DOM on each button click —
+        including new random IDs on the buttons — but the table cell text content
+        does not change, so polling cell text is not a reliable signal here.
+        Polling the button ID is the correct approach.
 
         Returns True if regeneration detected within timeout, False otherwise.
         """
         try:
             self.page.wait_for_function(
-                f"() => document.querySelector('table tbody tr:first-child td:first-child')?.innerText?.trim() !== {repr(initial_first_cell_text)}",
+                f"() => document.querySelector('a.button:not(.alert):not(.success)')?.id !== {repr(initial_blue_btn_id)}",
                 timeout=timeout,
             )
             return True

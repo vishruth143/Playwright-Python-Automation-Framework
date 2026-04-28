@@ -309,15 +309,16 @@ class TestHeroku:
         """
         Test #04 : Verify Basic Auth authentication.
 
-        Basic Auth presents a native browser dialog.  Playwright handles this
-        natively by setting HTTP credentials on the browser context, which causes
-        the browser to send the Authorization header automatically.  Credentials
+        Basic Auth presents a native browser dialog.  The standard cross-browser
+        workaround is to embed the credentials directly in the URL
+        (scheme://username:password@host/path), which causes the browser to send
+        the Authorization header automatically without any dialog.  Credentials
         are read from the environment config so they are never hard-coded.
 
         Steps:
         01) Read Basic Auth credentials (username / password) from the env config.
-        02) Navigate directly to the Basic Auth page using Playwright's built-in
-            HTTP credentials support (page.context.set_http_credentials).
+        02) Construct the auth URL with credentials embedded
+            (https://username:password@host/basic_auth) and navigate to it.
         03) Verify the page URL contains '/basic_auth'.
         04) Verify the 'Basic Auth' page heading is visible.
         05) Verify the success message 'Congratulations! You must have the proper
@@ -336,13 +337,15 @@ class TestHeroku:
             username = env_config.get("basic_auth_username")
             password = env_config.get("basic_auth_password")
             base_url = env_config.get("url", "").rstrip("/")
-            basic_auth_url = f"{base_url}/basic_auth"
-            log.info("Basic Auth credentials read from config.")
 
-            log.info("STEP 02: Set HTTP credentials on the browser context and navigate to /basic_auth.")
-            # Playwright natively supports HTTP Basic Auth via context credentials.
-            page.context.set_http_credentials({"username": username, "password": password})
-            page.goto(basic_auth_url)
+            # Embed credentials in the URL so the browser sends the Authorization
+            # header automatically — e.g. https://admin:admin@the-internet.herokuapp.com/basic_auth
+            scheme, host = base_url.split("://", 1)
+            auth_url = f"{scheme}://{username}:{password}@{host}/basic_auth"
+            log.info("Basic Auth URL constructed (credentials embedded in URL).")
+
+            log.info("STEP 02: Navigate to the Basic Auth page with credentials embedded in URL.")
+            page.goto(auth_url)
 
             log.info("STEP 03: Verify the page URL contains '/basic_auth'.")
             if self.basicauthpage.is_url_contains("/basic_auth"):
@@ -375,12 +378,6 @@ class TestHeroku:
             log.error(f"Error: {e}")
             log.info("Test #04 : Verify Basic Auth authentication. - Failed")
             raise
-        finally:
-            # Clear credentials so they don't bleed into subsequent tests
-            try:
-                page.context.set_http_credentials(None)
-            except Exception:  # pylint: disable=broad-except
-                pass
 
     # @pytest.mark.skip
     def test_broken_images(self, page, region):
@@ -566,9 +563,8 @@ class TestHeroku:
             log.info(f"  Initial green btn id: '{initial_green_id}'")
 
             log.info("STEP 09: Click the blue button; verify DOM regenerates — button ID changes.")
-            pre_click_cell_text = self.challengingdompage.get_first_row_text()
             self.challengingdompage.click_blue_btn()
-            if not self.challengingdompage.wait_for_table_to_regenerate(pre_click_cell_text):
+            if not self.challengingdompage.wait_for_table_to_regenerate(initial_blue_id):
                 raise AssertionError("Table did not regenerate after clicking the blue button.")
             blue_id_after = self.challengingdompage.get_blue_btn_id()
             log.info(f"  Blue btn id after click : '{blue_id_after}'")
@@ -580,9 +576,8 @@ class TestHeroku:
             log.info("  DOM regenerated after blue button click — button ID changed and table was re-rendered.")
 
             log.info("STEP 10: Click the red button; verify DOM regenerates again.")
-            pre_click_cell_text = self.challengingdompage.get_first_row_text()
             self.challengingdompage.click_red_btn()
-            if not self.challengingdompage.wait_for_table_to_regenerate(pre_click_cell_text):
+            if not self.challengingdompage.wait_for_table_to_regenerate(blue_id_after):
                 raise AssertionError("Table did not regenerate after clicking the red button.")
             red_id_after = self.challengingdompage.get_red_btn_id()
             log.info(f"  Red btn id after click  : '{red_id_after}'")
@@ -594,9 +589,8 @@ class TestHeroku:
             log.info("  DOM regenerated after red button click — button ID changed and table was re-rendered.")
 
             log.info("STEP 11: Click the green button; verify DOM regenerates again.")
-            pre_click_cell_text = self.challengingdompage.get_first_row_text()
             self.challengingdompage.click_green_btn()
-            if not self.challengingdompage.wait_for_table_to_regenerate(pre_click_cell_text):
+            if not self.challengingdompage.wait_for_table_to_regenerate(red_id_after):
                 raise AssertionError("Table did not regenerate after clicking the green button.")
             green_id_after = self.challengingdompage.get_green_btn_id()
             log.info(f"  Green btn id after click: '{green_id_after}'")

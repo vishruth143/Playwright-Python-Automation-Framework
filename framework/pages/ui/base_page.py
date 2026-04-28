@@ -1,6 +1,7 @@
 # pylint: disable=[missing-module-docstring, missing-class-docstring, missing-function-docstring, line-too-long]
 
 from playwright.sync_api import Page, Locator, expect, TimeoutError as PlaywrightTimeoutError
+import re
 
 
 class BasePage:
@@ -152,7 +153,7 @@ class BasePage:
         try:
             expect(self.page).to_have_url(
                 # Use a regex that matches a partial URL
-                __import__("re").compile(f".*{__import__('re').escape(partial_url)}.*"),
+                re.compile(f".*{re.escape(partial_url)}.*"),
                 timeout=self.timeout
             )
             return True
