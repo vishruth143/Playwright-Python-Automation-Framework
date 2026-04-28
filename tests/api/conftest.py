@@ -10,4 +10,3 @@
 # Add cross-service helpers here only if they are reused by more than one
 # service test suite.
 # =============================================================================
-

@@ -61,4 +61,3 @@ def api_client(playwright: Playwright):
 def testdata():
     """Load JSONPlaceholder request/response payloads."""
     return ConfigParser.load_config("jsonplaceholder_api_test_data_config")
-
