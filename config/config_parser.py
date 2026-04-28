@@ -17,6 +17,8 @@ class ConfigParser:
         'pta_ui_test_excel_data_config': 'ui/pta/ui_test_excel_data_config.xlsx',
         'heroku_ui_test_env_config': 'ui/heroku/ui_test_env_config.yml',
         'heroku_ui_test_data_config': 'ui/heroku/ui_test_data_config.yml',
+        'jsonplaceholder_api_test_env_config': 'api/jsonplaceholder/api_test_env_config.yml',
+        'jsonplaceholder_api_test_data_config': 'api/jsonplaceholder/api_test_data_config.json',
     }
 
     @staticmethod
