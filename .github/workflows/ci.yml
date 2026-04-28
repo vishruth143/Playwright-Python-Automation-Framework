@@ -186,7 +186,7 @@ jobs:
             "themeColor": "$COLOR",
             "summary": "Automation CI Status",
             "sections": [ {
-              "activityTitle": "$STATUS_EMOJI Selenium CI Pipeline Report",
+              "activityTitle": "$STATUS_EMOJI Playwright CI Pipeline Report",
               "facts": [
                 { "name": "Trigger", "value": "$GITHUB_EVENT_NAME" },
                 { "name": "Triggered By", "value": "$GITHUB_ACTOR" },
