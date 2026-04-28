@@ -414,7 +414,7 @@ The pipeline triggers automatically when changes are pushed or merged to `main` 
 5. Click on 'Add secret'.
 ```
 
-### Screen Recording for failed UI tests
+## 🖥️ Screen Recording for failed UI tests
 ```text
 1. Download and Install ffmpeg from: https://ffmpeg.org/download.html
 2. For Windows, click on the “Windows” logo and choose a build (e.g., from gyan.dev or BtbN).
