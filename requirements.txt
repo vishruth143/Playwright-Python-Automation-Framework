@@ -1,4 +1,4 @@
-allure-pytest            ==  2.15.3     # For Allure reporting
+allure-pytest            ==  2.16.0     # For Allure reporting
 colorlog                 ==  6.10.1     # For colored logging
 faker                    ==  40.15.0    # For generating fake data
 openpyxl                 ==  3.1.5      # For Excel file handling
