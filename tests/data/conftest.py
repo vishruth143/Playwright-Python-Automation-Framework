@@ -71,4 +71,3 @@ def countries_df(all_countries):
             "currencies": list(country.get("currencies", {}).keys()),
         })
     return pd.DataFrame(rows)
-

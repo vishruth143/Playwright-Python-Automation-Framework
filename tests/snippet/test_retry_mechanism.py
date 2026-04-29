@@ -12,4 +12,3 @@ def test_random_flaky():
     print(f"\nGenerated value: {value}")
     time.sleep(0.5)
     assert value > 5, f"Value {value} is not greater than 5"
-
