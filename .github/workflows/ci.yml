@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      REGION: qa
+      REGION: QA
       BROWSER: CHROME
       HEADLESS: Y
 
@@ -91,7 +91,7 @@ jobs:
 
       - name: Run Pytest with HTML and Allure Reporting
         run: |
-          pytest -vvv -m "pta or heroku" \
+          pytest -vvv -m "pta or heroku or jsonplaceholder"\
             -n 4 \
             --html=output/reports/report.html \
             --self-contained-html \
