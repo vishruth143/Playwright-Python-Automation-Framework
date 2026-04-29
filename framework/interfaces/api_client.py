@@ -6,8 +6,7 @@ from playwright.sync_api import APIRequestContext
 
 class APIClient:
     """
-    Thin wrapper around Playwright's APIRequestContext that mirrors the
-    requests-based APIClient interface used in the Selenium framework.
+    Thin wrapper around Playwright's APIRequestContext
 
     Each method returns a _PlaywrightResponse object that exposes:
         .status_code  - HTTP status code (int)
@@ -113,8 +112,7 @@ class APIClient:
 
 class _PlaywrightResponse:
     """
-    Adapter that makes a Playwright APIResponse look like a requests.Response,
-    so existing test assertions need no changes.
+    Adapter that makes a Playwright APIResponse look like a requests.Response
     """
 
     def __init__(self, pw_response):
