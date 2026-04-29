@@ -55,9 +55,19 @@ jobs:
   build-and-test:
     needs: lint
     runs-on: ubuntu-latest
+    outputs:
+      total:             ${{ steps.test_results.outputs.total }}
+      passed:            ${{ steps.test_results.outputs.passed }}
+      failed:            ${{ steps.test_results.outputs.failed }}
+      skipped:           ${{ steps.test_results.outputs.skipped }}
+      failed_ui:         ${{ steps.test_results.outputs.failed_ui }}
+      failed_api:        ${{ steps.test_results.outputs.failed_api }}
+      failed_mobile:     ${{ steps.test_results.outputs.failed_mobile }}
+      failed_performance: ${{ steps.test_results.outputs.failed_performance }}
+      failed_data:       ${{ steps.test_results.outputs.failed_data }}
 
     env:
-      REGION: QA
+      REGION: qa
       BROWSER: CHROME
       HEADLESS: Y
 
@@ -91,14 +101,88 @@ jobs:
 
       - name: Run Pytest with HTML and Allure Reporting
         run: |
-          pytest -vvv -m "pta or heroku or jsonplaceholder"\
+          pytest -vvv -m "pta or heroku or jsonplaceholder" \
             -n 4 \
-            --html=output/reports/report.html \
+            --html=output/reports/pta_report.html \
             --self-contained-html \
             --capture=tee-sys \
             --alluredir=output/allure-results \
             --durations=10 \
+            --junit-xml=output/reports/junit_report.xml \
             tests
+
+      - name: Parse Test Results
+        if: always()
+        id: test_results
+        run: |
+          python3 - <<'PYEOF'
+          import os, xml.etree.ElementTree as ET
+          from collections import defaultdict
+
+          xml_path = 'output/reports/junit_report.xml'
+          gho = os.environ.get('GITHUB_OUTPUT', '')
+
+          def write(key, value):
+              if gho:
+                  with open(gho, 'a') as f:
+                      f.write(f"{key}={value}\n")
+              print(f"{key}={value}")
+
+          # Layer detection: map classname/file path segment → friendly label
+          LAYER_ORDER = ['ui', 'api', 'mobile', 'performance', 'data']
+          LAYER_LABELS = {
+              'ui':          '🖥️ UI',
+              'api':         '🔌 API',
+              'mobile':      '📱 Mobile',
+              'performance': '⚡ Performance',
+              'data':        '🗄️ Data',
+          }
+
+          if not os.path.isfile(xml_path):
+              for k in ('total','passed','failed','skipped'):
+                  write(k, '0')
+              for layer in LAYER_ORDER:
+                  write(f'failed_{layer}', 'None')
+              raise SystemExit(0)
+
+          tree = ET.parse(xml_path)
+          root = tree.getroot()
+          suites = root.findall('.//testsuite') or ([root] if root.tag == 'testsuite' else [])
+
+          total = passed = failed = skipped = 0
+          failed_by_layer = defaultdict(list)
+
+          for suite in suites:
+              total   += int(suite.get('tests',    0))
+              failed  += int(suite.get('failures', 0)) + int(suite.get('errors', 0))
+              skipped += int(suite.get('skipped',  0))
+
+          passed = total - failed - skipped
+
+          # Collect individual failed test names grouped by layer
+          for tc in root.iter('testcase'):
+              if tc.find('failure') is not None or tc.find('error') is not None:
+                  classname = tc.get('classname', '')
+                  name      = tc.get('name', 'unknown')
+                  # Determine layer from classname (e.g. "tests.ui.heroku.test_heroku")
+                  layer_found = 'ui'  # default
+                  for layer in LAYER_ORDER:
+                      if f'.{layer}.' in classname or classname.startswith(f'{layer}.') or classname.startswith(f'tests.{layer}.'):
+                          layer_found = layer
+                          break
+                  failed_by_layer[layer_found].append(name)
+
+          write('total',   str(total))
+          write('passed',  str(passed))
+          write('failed',  str(failed))
+          write('skipped', str(skipped))
+
+          for layer in LAYER_ORDER:
+              names = failed_by_layer.get(layer, [])
+              write(f'failed_{layer}', ', '.join(names) if names else 'None')
+
+          print(f"Results → Total:{total} Passed:{passed} Failed:{failed} Skipped:{skipped}")
+          PYEOF
 
       - name: Install Allure CLI (Manual)
         run: |
@@ -165,6 +249,15 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_ACTOR: ${{ github.actor }}
+          TOTAL_TESTS: ${{ needs.build-and-test.outputs.total }}
+          PASSED_TESTS: ${{ needs.build-and-test.outputs.passed }}
+          FAILED_TESTS: ${{ needs.build-and-test.outputs.failed }}
+          SKIPPED_TESTS: ${{ needs.build-and-test.outputs.skipped }}
+          FAILED_UI: ${{ needs.build-and-test.outputs.failed_ui }}
+          FAILED_API: ${{ needs.build-and-test.outputs.failed_api }}
+          FAILED_MOBILE: ${{ needs.build-and-test.outputs.failed_mobile }}
+          FAILED_PERFORMANCE: ${{ needs.build-and-test.outputs.failed_performance }}
+          FAILED_DATA: ${{ needs.build-and-test.outputs.failed_data }}
         run: |
           echo "Lint Job Status: $LINT_STATUS"
           echo "Build and Test Job Status: $BUILD_STATUS"
@@ -179,6 +272,16 @@ jobs:
             COLOR="FF0000"
           fi
 
+          # Build failure-details facts only for layers that have failures
+          FAILURE_FACTS=""
+          for LAYER_KEY in "🖥️ UI:$FAILED_UI" "🔌 API:$FAILED_API" "📱 Mobile:$FAILED_MOBILE" "⚡ Performance:$FAILED_PERFORMANCE" "🗄️ Data:$FAILED_DATA"; do
+            LABEL="${LAYER_KEY%%:*}"
+            NAMES="${LAYER_KEY#*:}"
+            if [ -n "$NAMES" ] && [ "$NAMES" != "None" ]; then
+              FAILURE_FACTS="${FAILURE_FACTS}{ \"name\": \"↳ $LABEL Failures\", \"value\": \"$NAMES\" },"
+            fi
+          done
+
           MESSAGE=$(cat <<EOF
           {
             "@type": "MessageCard",
@@ -192,8 +295,13 @@ jobs:
                 { "name": "Triggered By", "value": "$GITHUB_ACTOR" },
                 { "name": "Lint Job", "value": "$LINT_STATUS" },
                 { "name": "Build & Test Job", "value": "$BUILD_STATUS" },
+                { "name": "Total Tests", "value": "$TOTAL_TESTS" },
+                { "name": "✅ Passed", "value": "$PASSED_TESTS" },
+                { "name": "❌ Failed", "value": "$FAILED_TESTS" },
+                { "name": "⏭️ Skipped", "value": "$SKIPPED_TESTS" },
+                $FAILURE_FACTS
                 { "name": "Branch", "value": "$GITHUB_REF_NAME" },
-                { "name": "Run", "value": "[View Run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" }                
+                { "name": "Run", "value": "[View Run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" }
               ],
               "markdown": true
             } ]
