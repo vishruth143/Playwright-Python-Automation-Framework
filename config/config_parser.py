@@ -19,6 +19,8 @@ class ConfigParser:
         'heroku_ui_test_data_config': 'ui/heroku/ui_test_data_config.yml',
         'jsonplaceholder_api_test_env_config': 'api/jsonplaceholder/api_test_env_config.yml',
         'jsonplaceholder_api_test_data_config': 'api/jsonplaceholder/api_test_data_config.json',
+        'restcountries_data_validation_config': 'data/restcountries/data_validation_config.yml',
+        'jsonplaceholder_perf_test_config': 'performance/jsonplaceholder/perf_test_config.yml',
     }
 
     @staticmethod
