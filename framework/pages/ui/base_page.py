@@ -123,20 +123,17 @@ class BasePage:
     # ------------------------------------------------------------------------------------------------------------------
 
     def wait_until_not_visible(self, selector: str) -> None:
-        """Wait until the element is hidden or removed from the DOM."""
+        """Wait until the element is hidden or removed from the DOM.
+
+        Playwright does NOT auto-wait for elements to disappear, so this must be
+        called explicitly when you need to confirm that a spinner, modal, or toast
+        has gone away before proceeding.
+        """
         try:
             self._locator(selector).wait_for(state="hidden", timeout=self.timeout)
         except PlaywrightTimeoutError as e:
             raise Exception(f"Element still visible after timeout: '{selector}' | Exception: {str(e)}")
 
-    def wait_for_clickable(self, selector: str) -> Locator:
-        """Wait until the element is visible and enabled (actionable)."""
-        try:
-            locator = self._locator(selector)
-            locator.wait_for(state="visible", timeout=self.timeout)
-            return locator
-        except PlaywrightTimeoutError as e:
-            raise Exception(f"Element not clickable: '{selector}' | Exception: {str(e)}")
 
     # ------------------------------------------------------------------------------------------------------------------
     #                                              Page-level helpers

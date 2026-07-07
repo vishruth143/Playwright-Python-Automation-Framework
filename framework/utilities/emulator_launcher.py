@@ -1,7 +1,7 @@
 import subprocess
 import time
 
-def launch_emulator(avd_name="Pixel_9_Pro_XL"):
+def launch_emulator(avd_name="Pixel_10_Pro_XL"):
     try:
         # Check if any emulator is already running
         result = subprocess.run(["adb", "devices"], capture_output=True, text=True)

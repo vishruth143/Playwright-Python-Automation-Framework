@@ -46,12 +46,13 @@ Containerized with Docker · CI/CD via GitHub Actions & Jenkins · Notifications
 11. [CI/CD Integration](#-cicd-integration)
     - [GitHub Actions](#-github-actions)
     - [Jenkins](#-jenkins)
-12. [MS Teams Notifications](#-ms-teams-notifications)
-13. [Screen Recording (ffmpeg)](#-screen-recording-ffmpeg)
-14. [Inspecting Environment Variables](#-inspecting-environment-variables)
-15. [Conventional Commits](#-conventional-commits)
-16. [MCP Servers](#-mcp-servers)
-17. [Claude · GitHub Integration](#-claude--github-integration)
+12. [Mobile Testing Setup (KWA · Android Emulator)](#-mobile-testing-setup-kwa--android-emulator)
+13. [MS Teams Notifications](#-ms-teams-notifications)
+14. [Screen Recording (ffmpeg)](#-screen-recording-ffmpeg)
+15. [Inspecting Environment Variables](#-inspecting-environment-variables)
+16. [Conventional Commits](#-conventional-commits)
+17. [MCP Servers](#-mcp-servers)
+18. [Claude · GitHub Integration](#-claude--github-integration)
 
 ---
 
@@ -165,9 +166,7 @@ allure generate output/allure-results --clean -o output/allure-report
 Playwright-Python-Automation-Framework/
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                                         # GitHub Actions CI workflow
-│       ├── claude-code-review.yml                         # Claude AI automated code review workflow
-│       └── claude.yml                                     # Claude AI GitHub integration workflow
+│       └── ci.yml                                         # GitHub Actions CI workflow
 │
 ├── config/                                                # Configuration files
 │   ├── api/
@@ -177,7 +176,7 @@ Playwright-Python-Automation-Framework/
 │   │
 │   ├── data/
 │   │   └── restcountries/
-│   │       └── data_validation_config.yml                 # Data validation rules (ranges, expected counts, regions)
+│   │       └── data_validation_config.yml                 # Data validation rules
 │   │
 │   ├── mobile/
 │   │   └── kwa/
@@ -210,13 +209,13 @@ Playwright-Python-Automation-Framework/
 │   ├── app_apk/
 │   │   └── Android_Demo_App.apk                           # Android APK for mobile testing
 │   ├── interfaces/
-│   │   └── api_client.py                                  # Playwright APIRequestContext wrapper (GET/POST/PUT/PATCH/DELETE)
+│   │   └── api_client.py                                  # Playwright APIRequestContext wrapper
 │   ├── listeners/
-│   │   └── event_listeners.py                             # Playwright event hooks for auto-logging
+│   │   └── event_listeners.py                             # Selenium/Appium listener for KWA mobile suite
 │   ├── pages/
 │   │   ├── mobile/                                        # Mobile base page objects
 │   │   └── ui/
-│   │       └── base_page.py                               # BasePage – all shared Playwright interactions & waits
+│   │       └── base_page.py                               # BasePage: shared Playwright interactions & waits
 │   └── utilities/
 │       ├── common.py                                      # General helpers (Faker, data utils)
 │       ├── custom_logger.py                               # Rotating file logger with colored console output
@@ -224,20 +223,19 @@ Playwright-Python-Automation-Framework/
 │       ├── loaders.py                                     # YAML / JSON / Excel config loaders
 │       └── screenshot_utils.py                            # Screenshot capture on test failure
 │
-├── output/                                                # Auto-generated test artifacts (cleaned each session)
-│   ├── allure-report/                                     # Generated Allure HTML report
+├── output/                                                # Auto-generated artifacts (cleaned each session)
 │   ├── allure-results/                                    # Raw Allure result files (JSON + attachments)
 │   ├── logs/
-│   │   └── test_execution.log                             # Merged execution log (per-worker shards merged at session end; 10 MB / 5 backups)
+│   │   └── test_execution.log                             # Merged execution log (10 MB / 5 backups)
 │   ├── reports/                                           # pytest-html self-contained HTML reports
-│   ├── screenshots/                                       # PNG screenshots captured on test failure
+│   ├── screenshots/                                       # PNG screenshots captured on failure
 │   └── videos/                                            # WebM videos + traces (kept only on failure)
 │
 ├── tests/                                                 # Test suite
 │   ├── api/
 │   │   ├── jsonplaceholder/
 │   │   │   ├── conftest.py                                # JSONPlaceholder fixtures: api_client + testdata
-│   │   │   └── test_jsonplaceholder.py                    # JSONPlaceholder API tests (Playwright APIRequestContext)
+│   │   │   └── test_jsonplaceholder.py                    # JSONPlaceholder API tests
 │   │   └── conftest.py                                    # Shared API scaffolding
 │   │
 │   ├── data/
@@ -250,14 +248,21 @@ Playwright-Python-Automation-Framework/
 │   │   │   ├── pages/
 │   │   │   │   ├── contact_us_form_page.py
 │   │   │   │   ├── enter_some_value_page.py
-│   │   │   │   └── home_page.py
+│   │   │   │   ├── home_page.py
+│   │   │   │   ├── scroll_view_page.py
+│   │   │   │   └── tab_activity_page.py
+│   │   │   ├── conftest.py                                # KWA fixtures: Appium driver + testdata
 │   │   │   └── test_kwa.py                                # KWA mobile functional tests
+│   │   ├── wdio/
+│   │   │   ├── pages/
+│   │   │   ├── conftest.py
+│   │   │   └── test_wdio.py                               # WDIO mobile functional tests
 │   │   └── conftest.py                                    # Appium server + desired capabilities
 │   │
 │   ├── performance/
-│   │   └── locustfile.py                                  # Locust performance tests – JSONPlaceholder (9 tasks)
+│   │   └── locustfile.py                                  # Locust performance tests
 │   │
-│   ├── snippet/                                           # Reusable code snippets and examples
+│   ├── snippet/                                           # Reusable examples
 │   │   ├── test_excel.py
 │   │   ├── test_parametrize_mechanism.py
 │   │   └── test_retry_mechanism.py
@@ -285,15 +290,16 @@ Playwright-Python-Automation-Framework/
 │   │   │
 │   │   └── conftest.py                                    # Playwright browser/page fixtures & hooks
 │   │
-│   └── conftest.py                                        # Session fixtures – clean output/, write Allure env props, executor.json
+│   └── conftest.py                                        # Session fixtures: cleanup + Allure metadata
 │
 ├── resume/
+│   ├── Vishvambruth_JavagalThimmegowda_CoverLetter_2026.docx
 │   └── Vishvambruth_JavagalThimmegowda_QEM_Resume_2026.docx
 │
 ├── .gitignore
-├── AGENTS.md                                              # AI coding-agent guidance (concise)
-├── CLAUDE.md                                              # AI assistant guidance (commands, architecture, patterns)
-├── automation_architecture.drawio                         # Editable architecture diagram (draw.io source)
+├── AGENTS.md                                              # AI coding-agent guidance
+├── CLAUDE.md                                              # AI assistant guidance
+├── automation_architecture.drawio                         # Editable architecture diagram
 ├── automation_architecture.png                            # Framework architecture diagram
 ├── automation_coverage.png                                # Test coverage diagram
 ├── Dockerfile
@@ -363,7 +369,7 @@ _BROKEN_IMAGES_LNK       = "//a[normalize-space()='Broken Images']"
 
 ## 🌐 Environment Variables
 
-> **Note:** `APP_NAME`, `SERVICE_NAME`, and `MOBILE_APP_NAME` were previously required to select which app/service/mobile-app to run. They are **no longer needed** — each app folder under `tests/` has its own `conftest.py` that loads the right config automatically based on the test path being collected.
+> **Note:** Each app folder under `tests/` has its own `conftest.py` that loads the right config automatically based on the test path being collected.
 
 ### UI Testing
 
@@ -646,6 +652,123 @@ The pipeline triggers automatically when changes are pushed or merged to `main` 
 
 ---
 
+## 📱 Mobile Testing Setup (KWA · Android Emulator)
+
+This section walks you through setting up Android tooling, launching an emulator, and running the KWA mobile test suite end-to-end.
+
+### 🛠 Prerequisites
+
+| Tool                | Version | Purpose                                      | Install                                               |
+|---------------------|---------|----------------------------------------------|-------------------------------------------------------|
+| Java JDK            | 11+     | Required by Android SDK and Appium           | [adoptium.net](https://adoptium.net/)                 |
+| Android Studio      | Latest  | Provides Android SDK, AVD Manager, emulator  | [developer.android.com](https://developer.android.com/studio) |
+| Appium Server       | 2.x     | Mobile automation server                     | `npm install -g appium`                               |
+| UiAutomator2 driver | Latest  | Appium Android driver                        | `appium driver install uiautomator2`                  |
+| Node.js             | 18+     | Required by Appium                           | [nodejs.org](https://nodejs.org/)                     |
+
+**Environment variables** — run these once in PowerShell to persist them permanently:
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ANDROID_HOME", "$env:LOCALAPPDATA\Android\Sdk", [System.EnvironmentVariableTarget]::User)
+
+$androidHome = "$env:LOCALAPPDATA\Android\Sdk"
+$current = [System.Environment]::GetEnvironmentVariable("Path", "User")
+$additions = "$androidHome\emulator;$androidHome\platform-tools;$androidHome\tools"
+[System.Environment]::SetEnvironmentVariable("Path", "$current;$additions", [System.EnvironmentVariableTarget]::User)
+```
+
+Close and reopen terminal, then verify:
+
+```powershell
+$env:ANDROID_HOME
+adb --version
+emulator -list-avds
+```
+
+### Step 1 — Install Appium and UiAutomator2
+
+```powershell
+npm install -g appium
+appium driver install uiautomator2
+appium driver list
+appium --version
+```
+
+### Step 2 — Create an Android Virtual Device (AVD)
+
+1. Open Android Studio → **Device Manager**.
+2. Click **Create Virtual Device**.
+3. Pick a device profile and system image.
+4. Set AVD name to `Pixel_10_Pro_XL` (matches `framework/utilities/emulator_launcher.py`).
+
+```powershell
+emulator -list-avds
+```
+
+### Step 3 — Launch the emulator
+
+```powershell
+emulator -avd Pixel_10_Pro_XL
+adb devices
+```
+
+### Step 4 — Verify local setup
+
+```powershell
+adb devices
+appium --version
+Test-Path "framework\app_apk\kwa\Android_Demo_App.apk"
+Get-Content config\mobile\kwa\mobile_test_env_config.yml
+```
+
+Check `RUN_ON_CLOUD : false` for local emulator mode.
+
+### Step 5 — Optional APK reinstall
+
+```powershell
+adb install -r .\framework\app_apk\kwa\Android_Demo_App.apk
+```
+
+```powershell
+adb uninstall com.code2lead.kwad
+adb install .\framework\app_apk\kwa\Android_Demo_App.apk
+```
+
+### Step 6 — Run KWA tests
+
+```powershell
+.venv\Scripts\activate
+pytest -vvv -m "kwa" --maxfail=1 --log-cli-level=INFO --reruns 3 `
+  --html=output/reports/kwa_mobile_report.html --self-contained-html `
+  --alluredir=output/allure-results --capture=tee-sys --durations=10 tests
+```
+
+### Step 7 — LambdaTest cloud (optional)
+
+Update `config/mobile/kwa/mobile_test_env_config.yml`:
+
+```yaml
+RUN_ON_CLOUD: true
+CLOUD_PROVIDER: lambdatest
+IS_VIRTUAL_DEVICE: true
+LAMBDATEST_USERNAME: <your-username>
+LAMBDATEST_ACCESS_KEY: <your-access-key>
+APP: lt://APP<your-app-id>
+```
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `adb: command not found` | `platform-tools` not on `PATH` | Add `$ANDROID_HOME\platform-tools` to `PATH` |
+| `emulator: command not found` | `emulator` not on `PATH` | Add `$ANDROID_HOME\emulator` to `PATH` |
+| Emulator not visible in `adb devices` | AVD mismatch | Match AVD name in `framework/utilities/emulator_launcher.py` |
+| `Appium server failed to start` | Port 4723 busy or Appium missing | Run `appium` manually and fix the underlying error |
+| APK not found | Wrong APK path | Verify `framework\app_apk\kwa\Android_Demo_App.apk` |
+| `SessionNotCreatedException` | UiAutomator2 missing | Run `appium driver install uiautomator2` |
+
+---
+
 ## 📢 MS Teams Notifications
 
 ### In MS Teams
@@ -818,6 +941,10 @@ The configuration file lives at:
 | `mysql`                | `mysql_mcp_server` (via `uv`)                 | Execute SQL queries against a local MySQL database                    |
 | `word-document-server` | `office-word-mcp-server` (via `uvx`)          | Create and manipulate Word `.docx` documents                          |
 | `mcp-atlassian`        | `mcp-atlassian` (via `uvx`)                   | Jira and Confluence integration                                       |
+| `appium-mcp`           | `appium-mcp@latest` (via `npx`)               | Mobile test automation via Appium (Android/iOS)                       |
+| `notion`               | Notion MCP (remote HTTP)                      | Notion workspace — pages, databases, comments, and search             |
+| `drawio`               | `@drawio/mcp`                                 | Create and edit draw.io diagrams programmatically                     |
+| `Canva`                | `mcp-remote@latest` → Canva MCP              | Canva design creation and asset management                            |
 
 ### `mcp.json`
 
@@ -891,6 +1018,41 @@ The configuration file lives at:
         "CONFLUENCE_USERNAME": "your.email@company.com",
         "CONFLUENCE_API_TOKEN": "your_api_token"
       }
+    },
+    "_disabled_mcp-appium": {
+      "disabled": true,
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\@gavrix\\appium-mcp\\server.js"
+      ]
+    },
+    "appium-mcp": {
+      "disabled": false,
+      "timeout": 100,
+      "type": "stdio",
+      "command": "npx",
+      "args": ["appium-mcp@latest"],
+      "env": {
+        "ANDROID_HOME": "C:\\Users\\<your-username>\\AppData\\Local\\Android\\Sdk",
+        "CAPABILITIES_CONFIG": "C:\\Playwright-Python-Automation-Framework\\framework\\config_cap\\capabilities.json"
+      }
+    },
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "drawio": {
+      "command": "npx",
+      "args": ["-y", "@drawio/mcp"]
+    },
+    "Canva": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.canva.com/mcp"
+      ]
     }
   }
 }
